@@ -107,11 +107,12 @@ contract BravoVestingTrustee is Claimable {
     /// @param _holder address The address of the holder.
     /// @param _time uint256 The specific time.
     /// @return a uint256 representing a holder's total amount of vested tokens.
-    function vestedTokens(address _holder, uint256 _time) public constant returns (uint256) {
+    function vestedTokens(address _holder, uint256 _time) public constant returns (uint256, uint256) {
         Grant[] grant = grants[_holder];
         
-        return calculateVestedTokens(grant, _time);
+        return (calculateVestedTokens(grant, _time), grant.length);
     }
+
 
     /// @dev Calculate amount of vested tokens at a specifc time.
     /// @param _grant Grant The vesting grant.
@@ -188,8 +189,7 @@ contract BravoVestingTrustee is Claimable {
         if (transferable == 0) {
             return;
         }
-        
-        
+
         for(uint j = 0; j < grant.length; i++) {
             grant[i].transferred = grant[j].transferred.add(calculateVestedTokensForSpecificGrant(grant[j], now));
             totalVesting = totalVesting.sub(grant[i].transferred);
