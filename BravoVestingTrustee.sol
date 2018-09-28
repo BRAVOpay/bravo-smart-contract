@@ -219,9 +219,9 @@ contract BravoVestingTrustee is Claimable {
             return;
         }
 
-        for(uint j = 0; j < grant.length; i++) {
-            grant[i].transferred = grant[j].transferred.add(calculateVestedTokensForSpecificGrant(grant[j], now));
-            totalVesting = totalVesting.sub(grant[i].transferred);
+        for(uint j = 0; j < grant.length; j++) {
+            grant[j].transferred = grant[j].transferred.add(calculateVestedTokensForSpecificGrant(grant[j], now));
+            totalVesting = totalVesting.sub(grant[j].transferred);
         }
         
         token.transfer(msg.sender, transferable);
