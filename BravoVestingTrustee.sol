@@ -81,9 +81,11 @@ contract BravoVestingTrustee is Claimable {
         Grant[] grant = grants[_holder];
         
         uint numberRevoked = 0;
+        uint initialGrantCount = grant.length;
         uint256 totalRefund = 0;
-        for(uint i = 0; i < grant.length; i++) {
-             if(!grant[i].revokable) continue;
+        for(uint i = grant.length-1; i >= 0; i--) {
+            if(i >= grant.length) break;
+            if(!grant[i].revokable) continue;
 
             // Send the remaining STX back to the owner.
             uint256 refund = grant[i].value.sub(grant[i].transferred);
@@ -91,9 +93,10 @@ contract BravoVestingTrustee is Claimable {
             totalVesting = totalVesting.sub(refund);
             numberRevoked++;
             totalRefund = totalRefund.add(refund);
+            remove(_holder, i);
         }
         
-        if(numberRevoked == grant.length) {
+        if(numberRevoked == initialGrantCount) {
             // Remove the grant.
             delete grants[_holder];
         }
@@ -102,6 +105,32 @@ contract BravoVestingTrustee is Claimable {
         
         RevokeGrant(_holder, refund);
     }
+    
+    function remove(address holder, uint index) internal  returns(Grant[]) {
+        if (index >= grants[holder].length) return;
+
+        for (uint i = index; i<grants[holder].length-1; i++){
+            grants[holder][i] = grants[holder][i+1];
+        }
+        delete grants[holder][grants[holder].length-1];
+        grants[holder].length--;
+        return grants[holder];
+    }
+    
+    // function remove(Grant[] array, uint index) internal returns(Grant[] value) {
+    //     if (index >= array.length) return;
+
+    //     Grant[] arrayNew = new Grant[](array.length-1);
+    //     for (uint i = 0; i<arrayNew.length; i++){
+    //         if(i != index && i<index){
+    //             arrayNew[i] = array[i];
+    //         } else {
+    //             arrayNew[i] = array[i+1];
+    //         }
+    //     }
+    //     delete array;
+    //     return arrayNew;
+    // }
 
     /// @dev Calculate the total amount of vested tokens of a holder at a given time.
     /// @param _holder address The address of the holder.
