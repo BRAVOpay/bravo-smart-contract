@@ -173,8 +173,9 @@ contract BravoVestingTrustee is Claimable {
             if (_time >= _grant[i].end) {
                 vested = vested.add(_grant[i].value);
             } else {
-                // Interpolate all vested tokens: vestedTokens = tokens/// (time - start) / (end - start)
-                vested = vested.add(_grant[i].value.mul(_time.sub(_grant[i].start)).div(_grant[i].end.sub(_grant[i].start)));
+                // Interpolate all vested tokens: vestedTokens = (tokens / (end - start)) * (time - start)
+                vested = vested.add(_grant[i].value.div(_grant[i].end.sub(_grant[i].start)).mul(_time.sub(_grant[i].start)));
+                // vested = vested.add(_grant[i].value.mul(_time.sub(_grant[i].start)).div(_grant[i].end.sub(_grant[i].start)));
             }
         }
         
@@ -192,8 +193,8 @@ contract BravoVestingTrustee is Claimable {
             return _grant.value;
         }
 
-        // Interpolate all vested tokens: vestedTokens = tokens/// (time - start) / (end - start)
-        return _grant.value.mul(_time.sub(_grant.start)).div(_grant.end.sub(_grant.start));
+        // Interpolate all vested tokens: vestedTokens = (tokens / (end - start)) * (time - start)
+        return _grant.value.div(_grant.end.sub(_grant.start)).mul(_time.sub(_grant.start));
     }
 
     /// @dev Unlock vested tokens and transfer them to their holder.
@@ -207,7 +208,6 @@ contract BravoVestingTrustee is Claimable {
             return;
         }
         
-        
         // Make sure the holder doesn't transfer more than what he already has.
         uint256 transferable = 0;
         
@@ -218,10 +218,12 @@ contract BravoVestingTrustee is Claimable {
         if (transferable == 0) {
             return;
         }
-
+        
         for(uint j = 0; j < grant.length; j++) {
-            grant[j].transferred = grant[j].transferred.add(calculateVestedTokensForSpecificGrant(grant[j], now));
-            totalVesting = totalVesting.sub(grant[j].transferred);
+            uint vestedTokensForGrant = calculateVestedTokensForSpecificGrant(grant[j], now);
+            uint diff = vestedTokensForGrant - grant[j].transferred;
+            grant[j].transferred = vestedTokensForGrant;
+            totalVesting = totalVesting.sub(diff);
         }
         
         token.transfer(msg.sender, transferable);
